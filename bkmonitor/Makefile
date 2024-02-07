@@ -31,3 +31,7 @@ webpack-copy:
 .PHONY: build-clean
 build-clean:
 	sh version/pack.sh ${TARGET_DIR} ${PLATFORM} ${ROLE} ${VERSION}
+
+
+build-test-image:
+	docker build -f scripts/unittest/Dockerfile -t mirrors.tencent.com/crayon/bk-monitor-test:latest .

@@ -6,8 +6,9 @@ conf/*/ieod.py
 conf/*/*/ieod.py
 bkmonitor/utils/rsa/bk.key
 version/
-scripts/
+# scripts/
 tests/
-*/tests/
-*/*/tests/
+#*/tests/
+#*/*/tests/
 Dockerfile
+local/

@@ -25,6 +25,8 @@ class Duplicate:
         dup_key = key.ACCESS_DUPLICATE_KEY.get_key(strategy_group_key=self.strategy_group_key, dt_event_time=time)
         if dup_key not in self.record_ids_cache:
             if self.strategy_id is not None:
+                # Q：strategy_id setter 的作用是？
+                # A:Redis 路由分片 - alarm_backends/core/storage/redis_cluster.py
                 dup_key.strategy_id = self.strategy_id
             self.record_ids_cache[dup_key] = self.client.smembers(dup_key)
 
@@ -49,6 +51,9 @@ class Duplicate:
         self.pending_to_add.setdefault(dup_key, set()).add(record.record_id)
 
     def refresh_cache(self):
+        # TODO
+        # Q：access 已经是按 item + 拉取周期拆分处理的，为什么这里要推一次 Redis
+        # A：是为了防止数据拉取周期之间数据点重复？
         pipeline = self.client.pipeline(transaction=False)
         for dup_key, record_ids in self.pending_to_add.items():
             if self.strategy_id is not None:
