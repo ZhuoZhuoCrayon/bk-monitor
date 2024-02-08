@@ -87,6 +87,7 @@ FROM base-app AS app
 ENV DJANGO_SETTINGS_MODULE=settings
 ENV DJANGO_CONF_MODULE=conf.worker.development.enterprise
 ENV APP_TOKEN=xxxxxxxxxx
+ENV BK_MONITOR_APP_SECRET=xxxxxxxxxx
 ENV USE_DYNAMIC_SETTINGS=0
 ENV BKAPP_DEPLOY_PLATFORM=enterprise
 
