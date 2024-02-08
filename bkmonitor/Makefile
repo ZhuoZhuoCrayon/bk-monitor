@@ -34,4 +34,4 @@ build-clean:
 
 
 build-test-image:
-	docker build -f scripts/unittest/Dockerfile -t mirrors.tencent.com/crayon/bk-monitor-test:latest .
+	cp scripts/unittest/.dockerignore.dockerignore && docker build -f scripts/unittest/Dockerfile -t mirrors.tencent.com/crayon/bk-monitor-test:latest .
