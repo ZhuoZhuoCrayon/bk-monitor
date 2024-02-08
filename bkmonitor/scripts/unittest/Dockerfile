@@ -90,4 +90,4 @@ ENV APP_TOKEN=xxxxxxxxxx
 ENV USE_DYNAMIC_SETTINGS=0
 ENV BKAPP_DEPLOY_PLATFORM=enterprise
 
-ENTRYPOINT ["scripts/unittest/docker-entrypoint.sh"]
+ENTRYPOINT ["scripts/unittest/entrypoint.sh"]
