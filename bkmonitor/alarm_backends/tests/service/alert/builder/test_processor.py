@@ -26,6 +26,9 @@ from constants.data_source import KubernetesResultTableLabel
 
 
 class TestProcessor(TestCase):
+
+    databases = {"monitor_api", "default"}
+
     def setUp(self):
 
         CacheNode.refresh_from_settings()
@@ -1070,7 +1073,7 @@ class TestProcessor(TestCase):
                     "time": 1617504052,
                     "tags": [{"key": "device", "value": "cpu0"}],
                     "severity": 1,
-                    "target": f"127.0.0.1",
+                    "target": "127.0.0.1",
                     "dedupe_keys": ["alert_name", "target"],
                 }
             )
