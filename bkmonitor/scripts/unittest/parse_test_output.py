@@ -43,7 +43,7 @@ def handle_pytest(output: str) -> typing.Dict[str, int]:
 
 
 def handle_testcase(output: str) -> typing.Dict[str, int]:
-    pattern = re.compile(r"Ran\s(\d+)\stests\sin\s[\d\.s]+\s+(OK|FAILED\s\((?:failures|errors)=\d+,?\s?\))")
+    pattern = re.compile(r"Ran\s(\d+)\stests\sin\s[\d\.s]+\s+(OK|FAILED\s\((?:(?:failures|errors)=\d+,?\s?)+\))")
     total_str, matched_line = pattern.findall(output)[-1]
 
     category_mapping: typing.Dict[str, str] = {"failures": "failed"}
