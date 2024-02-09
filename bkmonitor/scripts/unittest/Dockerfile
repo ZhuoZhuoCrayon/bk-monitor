@@ -57,10 +57,11 @@ USER root
 RUN set -ex &&  \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        lsb-release gnupg gettext wget curl vim default-libmysqlclient-dev redis-server && \
+        lsb-release gnupg gettext wget curl vim git default-libmysqlclient-dev redis-server && \
     rm -rf /var/lib/apt/lists/*
 
 # Adding the MySQL APT Repository && Install
+# Refer: https://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/#apt-repo-fresh-install
 RUN set -ex && \
     wget https://dev.mysql.com/get/mysql-apt-config_0.8.26-1_all.deb && \
     dpkg -i mysql-apt-config_0.8.26-1_all.deb && \
