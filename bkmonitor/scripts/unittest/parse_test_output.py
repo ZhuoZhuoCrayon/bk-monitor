@@ -53,6 +53,8 @@ def handle_testcase(output: str) -> typing.Dict[str, int]:
 
     test_result["passed"] = int(total_str) - category_mapping.get("failed", 0) - category_mapping.get("errors", 0)
 
+    return test_result
+
 
 def parse_test_output(file_name):
     with open(file_name, "r") as file:
