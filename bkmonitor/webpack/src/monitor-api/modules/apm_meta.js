@@ -48,6 +48,8 @@ export const customServiceDataSource = request('POST', 'apm/meta/application/cus
 export const getDataEncoding = request('GET', 'apm/meta/application/data_encoding/');
 export const simpleServiceList = request('POST', 'apm/meta/application/simple_service_list/');
 
+export const ServiceConfig = request('POST', 'apm/meta/application/service_config/');
+
 export default {
   metaConfigInfo,
   metaInstrumentGuides,
@@ -96,4 +98,5 @@ export default {
   customServiceDataSource,
   getDataEncoding,
   simpleServiceList,
+  ServiceConfig,
 };

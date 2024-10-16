@@ -858,3 +858,10 @@ class BkCollectorComp:
 
     # 缓存 KEY: 安装了 bk-collector 的集群 id 列表
     CACHE_KEY_CLUSTER_IDS = "bk-collector:clusters"
+
+
+class MetricTemporality:
+    # 累积（Cumulative）：指标为 Counter 类型，数值只增不减，计算固定间隔（比如 1 分钟内）的请求量，需要用 increase 函数
+    CUMULATIVE: str = "cumulative"
+    # 差值（Delta）：指标为 Gauge 类型，数值是上报间隔，计算固定间隔（比如 1 分钟内）的请求量，需要用 sum_over_time 函数
+    DELTA: str = "delta"
