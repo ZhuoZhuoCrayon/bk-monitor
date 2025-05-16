@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tencent is pleased to support the open source community by making 蓝鲸智云 - 监控平台 (BlueKing - Monitor) available.
 Copyright (C) 2017-2021 THL A29 Limited, a Tencent company. All rights reserved.
@@ -11,6 +10,7 @@ specific language governing permissions and limitations under the License.
 
 import datetime
 import json
+from typing import Any
 
 from django.utils.translation import gettext_lazy as _
 from opentelemetry.semconv.resource import ResourceAttributes
@@ -25,9 +25,10 @@ from apm_web.constants import (
 )
 from apm_web.db.db_utils import build_db_param, get_offset
 from apm_web.handlers.component_handler import ComponentHandler
-from apm_web.handlers.db_handler import DbInstanceHandler, DbQuery, DbStatisticsHandler
+from apm_web.handlers.db_handler import DbInstanceHandler, DbQuery, DbStatisticsHandler, FilterOperator
 from apm_web.handlers.service_handler import ServiceHandler
 from apm_web.models import Application
+from bkmonitor.data_source.unify_query.builder import QueryConfigBuilder, UnifyQuerySet
 from constants.apm import OtlpKey
 from core.drf_resource import Resource, api
 from monitor_web.scene_view.resources.base import PageListResource
@@ -82,20 +83,20 @@ class ListDbStatisticsResource(PageListResource):
                     LinkTableFormat(
                         id="trace",
                         name=_("调用链"),
-                        url_format='/?bizId={bk_biz_id}/#/trace/home/?app_name={app_name}'
-                        + '&search_type=scope'
-                        + '&start_time={start_time}&end_time={end_time}'
-                        + '&listType=span',
+                        url_format="/?bizId={bk_biz_id}/#/trace/home/?app_name={app_name}"
+                        + "&search_type=scope"
+                        + "&start_time={start_time}&end_time={end_time}"
+                        + "&listType=span",
                         target="blank",
                         event_key=SceneEventKey.SWITCH_SCENES_TYPE,
                     ),
                     LinkTableFormat(
                         id="statistics",
                         name=_("统计"),
-                        url_format='/?bizId={bk_biz_id}/#/trace/home/?app_name={app_name}'
-                        + '&search_type=scope'
-                        + '&start_time={start_time}&end_time={end_time}'
-                        + '&listType=interfaceStatistics',
+                        url_format="/?bizId={bk_biz_id}/#/trace/home/?app_name={app_name}"
+                        + "&search_type=scope"
+                        + "&start_time={start_time}&end_time={end_time}"
+                        + "&listType=interfaceStatistics",
                         target="blank",
                         event_key=SceneEventKey.SWITCH_SCENES_TYPE,
                     ),
@@ -138,10 +139,10 @@ class ListDbStatisticsResource(PageListResource):
 
         res = self.handle_data(data, params)
 
-        return super(ListDbStatisticsResource, self).handle_format(res, column_formats, params)
+        return super().handle_format(res, column_formats, params)
 
     def get_pagination_data(self, data, params, column_type=None, skip_sorted=False):
-        items = super(ListDbStatisticsResource, self).get_pagination_data(data, params, column_type)
+        items = super().get_pagination_data(data, params, column_type)
         service_name = params.get("filter_params", {}).get(OtlpKey.get_resource_key(ResourceAttributes.SERVICE_NAME))
         if service_name:
             service_name = ComponentHandler.get_component_belong_service(service_name)
@@ -162,7 +163,7 @@ class ListDbStatisticsResource(PageListResource):
                 }
 
             for i in item["operation"]:
-                i["url"] = i["url"] + '&conditionList=' + json.dumps(tmp)
+                i["url"] = i["url"] + "&conditionList=" + json.dumps(tmp)
 
         return items
 
@@ -170,7 +171,7 @@ class ListDbStatisticsResource(PageListResource):
         table_id = Application.get_trace_table_id(validated_data["bk_biz_id"], validated_data["app_name"])
 
         if not table_id:
-            raise ValueError(_("应用【{}】没有 trace 结果表").format(validated_data['app_name']))
+            raise ValueError(_("应用【{}】没有 trace 结果表").format(validated_data["app_name"]))
 
         # 指标准入
         metric_list = [metric for metric in validated_data["metric_list"] if metric in METRIC_TUPLE]
@@ -252,10 +253,10 @@ class ListDbSpanResource(PageListResource):
                     LinkTableFormat(
                         id="detail",
                         name=_("详情"),
-                        url_format='/?bizId={bk_biz_id}/#/trace/home/?app_name={app_name}'
-                        + '&search_type=accurate'
-                        + '&search_id=spanID'
-                        + '&trace_id={span_id}',
+                        url_format="/?bizId={bk_biz_id}/#/trace/home/?app_name={app_name}"
+                        + "&search_type=accurate"
+                        + "&search_id=spanID"
+                        + "&trace_id={span_id}",
                         target="blank",
                         event_key=SceneEventKey.SWITCH_SCENES_TYPE,
                     ),
@@ -345,7 +346,7 @@ class ListDbSpanResource(PageListResource):
         for item in res["data"]:
             db_instance = obj.get_instance(item)
             start_time = datetime.datetime.fromtimestamp(int(item["start_time"]) // 1000000).strftime(
-                '%Y-%m-%d %H:%M:%S'
+                "%Y-%m-%d %H:%M:%S"
             )
             data.append(
                 {
@@ -375,66 +376,57 @@ class ListDbSystemResource(Resource):
         bk_biz_id = serializers.IntegerField(label="业务id")
         app_name = serializers.CharField(label="应用名称")
         group_by_key = serializers.CharField(label="分组字段")
+        start_time = serializers.IntegerField(required=True, label="数据开始时间")
+        end_time = serializers.IntegerField(required=True, label="数据结束时间")
         service_name = serializers.CharField(label="服务名称", required=False)
 
     def perform_request(self, validated_data):
-        table_id = Application.get_trace_table_id(validated_data["bk_biz_id"], validated_data["app_name"])
+        bk_biz_id: int = validated_data["bk_biz_id"]
+        app_name: str = validated_data["app_name"]
+        service_name: str | None = validated_data.get("service_name")
+        table_id = Application.get_trace_table_id(bk_biz_id, app_name)
         if not table_id:
-            raise ValueError(_("应用【{}】没有trace 结果表").format(validated_data['app_name']))
+            raise ValueError(_("应用【{}】没有trace 结果表").format(app_name))
 
-        node = ServiceHandler.get_node(
-            validated_data["bk_biz_id"], validated_data["app_name"], validated_data["service_name"]
-        )
-        # 服务名称处理
-        service_name = validated_data.get("service_name")
+        node: dict[str, Any] = ServiceHandler.get_node(bk_biz_id, app_name, service_name)
         predicate_value = node["extra_data"]["predicate_value"]
         if service_name and predicate_value and predicate_value in service_name:
             return [
-                {
-                    "id": predicate_value,
-                    "name": predicate_value,
-                    "app_name": validated_data.get("app_name"),
-                    "service_name": validated_data.get("service_name"),
-                }
+                {"id": predicate_value, "name": predicate_value, "app_name": app_name, "service_name": service_name}
             ]
 
         # 添加服务查询条件
-        filters = None
+        filters: list[dict[str, Any]] | None = None
         if service_name:
             filters = [
                 {
                     "key": OtlpKey.get_resource_key(ResourceAttributes.SERVICE_NAME),
-                    "operator": "equal",
+                    "operator": FilterOperator.EQUAL,
                     "value": [service_name],
                 }
             ]
-        query_body = DbQuery().build_param(
-            filter_params=filters,
+
+        group_by_key: str = validated_data["group_by_key"]
+        q: QueryConfigBuilder = (
+            DbQuery.get_q(table_id)
+            .group_by(group_by_key)
+            .filter(DbQuery.build_filter_params(filters))
+            .metric(method="count", field=group_by_key, alias="a")
+            .alias("a")
+        )
+        qs: UnifyQuerySet = (
+            DbQuery.get_qs(bk_biz_id, start_time=validated_data["start_time"], end_time=validated_data["end_time"])
+            .add_query(q)
+            .time_agg(False)
+            .instant()
+            .limit(DEFAULT_MAX_VALUE)
         )
 
-        # 添加aggregations
-        group_by_key = validated_data["group_by_key"]
-        query_body["aggs"] = {group_by_key: {"terms": {"field": group_by_key, "size": DEFAULT_MAX_VALUE}}}
-        # 额外条件
-        query_body["size"] = 0
-
-        response = api.apm_api.query_es(
-            {
-                "table_id": table_id,
-                "query_body": query_body,
-            }
-        )
-
-        buckets = response["aggregations"][validated_data["group_by_key"]]["buckets"]
-        data = []
-        for item in buckets:
-            data.append(
-                {
-                    "id": item.get("key"),
-                    "name": item.get("key"),
-                    "app_name": validated_data.get("app_name"),
-                    "service_name": validated_data.get("service_name"),
-                }
-            )
+        data: list[dict[str, Any]] = []
+        for record in list(qs):
+            name: str | None = record.get(group_by_key)
+            if not name:
+                continue
+            data.append({"id": name, "name": name, "app_name": app_name, "service_name": service_name})
 
         return data
